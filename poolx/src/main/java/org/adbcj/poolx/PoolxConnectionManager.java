@@ -18,9 +18,11 @@ import org.adbcj.support.FutureUtils;
 public class PoolxConnectionManager extends AbstractConnectionManager {
     protected ConnectionManager connectionManager;
     protected ConfigInfo config;
-    protected List<Connection> realConnections=new LinkedList<Connection>();
+    protected List<Connection> realConnections=new ArrayList<Connection>();
     protected List<PoolxConnection> virtualConnections=new LinkedList<PoolxConnection>();
     protected AtomicInteger allocatedConnectionsCount=new AtomicInteger();
+    Object lock=new Object();
+    protected final AtomicInteger roundCounter=new AtomicInteger(0);
 
 
     private final Timer timeOutTimer = new Timer("PooledConnectionManager timeout timer",true);
@@ -32,33 +34,6 @@ public class PoolxConnectionManager extends AbstractConnectionManager {
     }
 
 
-    /*
-    *  init MaxConnection number of real connections
-    *
-    */
-    public DbFuture<Boolean> init(){
-        //TODO unchecked , no timeout yet
-        final AtomicLong finishCount=new AtomicLong(0);
-        final DbFuture<Boolean> dbFuture=new DefaultDbFuture<Boolean>(stackTracingOptions());
-        for (long i=0;i<config.getMaxConnections();i++){
-            connectionManager.connect().addListener(new DbListener<Connection>() {
-                @Override
-                public void onCompletion(DbFuture<Connection> future) {
-                    try{
-                        realConnections.add(future.get());
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
-                    long nowCount =finishCount.addAndGet(1);
-                    if(nowCount==config.getMaxConnections()){
-                        ((DefaultDbFuture)dbFuture).setResult(true);
-                    }
-                }
-            });
-        }
-        return dbFuture;
-
-    }
 
     @Override
     public DbFuture<Connection> connect() {
@@ -66,13 +41,19 @@ public class PoolxConnectionManager extends AbstractConnectionManager {
         if (isClosed()){
             throw new DbException("ConnectionManager is closed. Failed to open new connections.");
         }
-        for (Connection realConnection:realConnections){
-            if (!realConnection.isInTransaction()){
-                Connection vconn=new PoolxConnection(this);
-                return DefaultDbFuture.completed(vconn);
+
+        synchronized(lock){
+            if ((int)config.getMaxConnections()>realConnections.size()){
+                try {
+                    realConnections.add(connectionManager.connect().get());
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
             }
-        }
-        throw new DbException("All pooled connections are in transaction, Cannot create more connections now.");
+        };
+
+        Connection vconn=new PoolxConnection(this);
+        return DefaultDbFuture.completed(vconn);
     }
 
     @Override
@@ -97,5 +78,16 @@ public class PoolxConnectionManager extends AbstractConnectionManager {
     @Override
     public StackTracingOptions stackTracingOptions() {
         return super.stackTracingOptions();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+
+    public Connection dispatcher(){
+        return dispatcher(false);
+    }
+    public Connection dispatcher(boolean isTransaction){
+        if (!isTransaction){
+            return realConnections.get(roundCounter.getAndAdd(1)%realConnections.size());
+        }
+        return null;
     }
 }

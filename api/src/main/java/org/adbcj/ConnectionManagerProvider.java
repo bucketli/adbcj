@@ -80,7 +80,6 @@ public class ConnectionManagerProvider {
 
 			ServiceLoader<ConnectionManagerFactory> serviceLoader = ServiceLoader.load(ConnectionManagerFactory.class);
 			for (ConnectionManagerFactory factory : serviceLoader) {
-                System.out.println(factory.toString());
 				if (factory.canHandle(protocol)) {
 					return factory.createConnectionManager(url, username, password, propertiesWithStandard);
 				}

@@ -39,17 +39,21 @@ public class PoolxConnection implements Connection {
 
     @Override
     public DbFuture<ResultSet> executeQuery(String sql) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Connection tempc = poolxConnectionManager.dispatcher();
+        return tempc.executeQuery(sql);
+
     }
 
     @Override
     public <T> DbFuture<T> executeQuery(String sql, ResultHandler<T> eventHandler, T accumulator) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Connection tempc= poolxConnectionManager.dispatcher();
+        return tempc.executeQuery(sql,eventHandler,accumulator);
     }
 
     @Override
     public DbFuture<Result> executeUpdate(String sql) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Connection tempc=poolxConnectionManager.dispatcher();
+        return tempc.executeUpdate(sql);
     }
 
     @Override
