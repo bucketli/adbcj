@@ -31,6 +31,7 @@
 		<module>h2</module>
 		<module>tck</module>
         <module>dbcj</module>
+        <module>poolx</module>
     </modules>
 
 	<scm>
@@ -206,6 +207,11 @@
 				<groupId>${project.groupId}</groupId>
 				<version>${project.version}</version>
 			</dependency>
+            <dependency>
+                <artifactId>adbcj-poolx</artifactId>
+                <groupId>${project.groupId}</groupId>
+                <version>${project.version}</version>
+            </dependency>
 			<dependency>
 				<artifactId>slf4j-api</artifactId>
 				<groupId>org.slf4j</groupId>

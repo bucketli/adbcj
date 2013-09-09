@@ -49,6 +49,11 @@
             <artifactId>adbcj-dbcj</artifactId>
             <version>${adbcj.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.adbcj</groupId>
+            <artifactId>adbcj-poolx</artifactId>
+            <version>${adbcj.version}</version>
+        </dependency>
         <!-- datasource  -->
         <dependency>
             <groupId>com.alibaba</groupId>

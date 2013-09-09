@@ -11,15 +11,15 @@ public class MainDemo {
     public static void main(String[] args) {
 
         // We assume we have a MySQL server running on localhost
-        // Database name: adbcj-demo
-        // User: adbcj
-        // Password: adbc-pwd
+        // Database name: adbcjtck
+        // User: adbcjtck
+        // Password: adbcjtck
 
         // A connection manager creates new connections for you.
         // Usually you have one instance in your system.
         // when you close the connection-manager, all associated connections are closed to.
         final ConnectionManager connectionManager = ConnectionManagerProvider.createConnectionManager(
-                "adbcj:pooled:mysql://localhost/adbcjtck",
+                "adbcj:poolx:mysql://localhost/adbcjtck",
                 "adbcjtck",
                 "adbcjtck"
         );
