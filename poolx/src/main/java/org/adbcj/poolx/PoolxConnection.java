@@ -39,21 +39,30 @@ public class PoolxConnection implements Connection {
 
     @Override
     public DbFuture<ResultSet> executeQuery(String sql) {
-        Connection tempc = poolxConnectionManager.dispatcher();
-        return tempc.executeQuery(sql);
+        if(realConnection==null){
+            Connection tempc = poolxConnectionManager.dispatcher();
+            return tempc.executeQuery(sql);
+        }
+        return null;
 
     }
 
     @Override
     public <T> DbFuture<T> executeQuery(String sql, ResultHandler<T> eventHandler, T accumulator) {
-        Connection tempc= poolxConnectionManager.dispatcher();
-        return tempc.executeQuery(sql,eventHandler,accumulator);
+        if (realConnection==null){
+            Connection tempc= poolxConnectionManager.dispatcher();
+            return tempc.executeQuery(sql,eventHandler,accumulator);
+        }
+        return null;
     }
 
     @Override
     public DbFuture<Result> executeUpdate(String sql) {
-        Connection tempc=poolxConnectionManager.dispatcher();
-        return tempc.executeUpdate(sql);
+        if(realConnection==null){
+            Connection tempc=poolxConnectionManager.dispatcher();
+            return tempc.executeUpdate(sql);
+        }
+        return null;
     }
 
     @Override
