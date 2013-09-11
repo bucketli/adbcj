@@ -84,9 +84,9 @@ public class PoolxConnectionManager extends AbstractConnectionManager {
     public Connection dispatcher(){
         return dispatcher(false);
     }
-    public Connection dispatcher(boolean isTransaction){
-        if (!isTransaction){
-            return realConnections.get(roundCounter.getAndAdd(1)%realConnections.size());
+    public Connection dispatcher(boolean needLock){
+        if (!needLock){
+            return realConnections.get(roundCounter.getAndIncrement()%realConnections.size());
         }
         return null;
     }

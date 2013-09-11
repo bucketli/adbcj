@@ -7,6 +7,7 @@ import org.adbcj.*;
  */
 public class PoolxConnection implements Connection {
     protected final PoolxConnectionManager poolxConnectionManager;
+    protected AbstractPoolxPreparedStatement preparedStatement=null;
     protected Connection realConnection=null;
     public PoolxConnection(PoolxConnectionManager poolxConnectionManager){
         this.poolxConnectionManager=poolxConnectionManager;
@@ -67,7 +68,8 @@ public class PoolxConnection implements Connection {
 
     @Override
     public DbFuture<PreparedQuery> prepareQuery(String sql) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+
+        return null;
     }
 
     @Override

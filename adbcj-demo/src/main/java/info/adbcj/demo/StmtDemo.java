@@ -2,41 +2,28 @@ package info.adbcj.demo;
 
 import org.adbcj.*;
 
-
 /**
- * @author roman.stoffel@gamlor.info
+ * @author foooling@gmail.com
+ *         13-9-10
  */
-public class MainDemo {
-
-    public static void main(String[] args) {
-
-        // We assume we have a MySQL server running on localhost
-        // Database name: adbcjtck
-        // User: adbcjtck
-        // Password: adbcjtck
-
-        // A connection manager creates new connections for you.
-        // Usually you have one instance in your system.
-        // when you close the connection-manager, all associated connections are closed to.
+public class StmtDemo {
+    public static void main(String[] args){
         final ConnectionManager connectionManager = ConnectionManagerProvider.createConnectionManager(
-                "adbcj:pooled:mysql://localhost/adbcjtck",
+                "adbcj:mysql://localhost/adbcjtck",
                 "adbcjtck",
                 "adbcjtck"
         );
-
-        // Connect to your database. It's asynchronous.
-        // This means we react on it when done
         final DbFuture<Connection> connect = connectionManager.connect();
         connect.addListener(new DbListener<Connection>() {
             @Override
-            public void onCompletion(DbFuture<Connection> connectionDbFuture) {
-                switch (connectionDbFuture.getState()){
+            public void onCompletion(DbFuture<Connection> future) {
+                switch (future.getState()){
                     case SUCCESS:
-                        final Connection connection = connectionDbFuture.getResult();
+                        final Connection connection = future.getResult();
                         continueAndCreateSchema(connection);
                         break;
                     case FAILURE:
-                        connectionDbFuture.getException().printStackTrace();
+                        future.getException().printStackTrace();
                         break;
                     case CANCELLED:
                         System.out.println("Cancelled");
@@ -45,7 +32,6 @@ public class MainDemo {
             }
         });
     }
-
     private static void continueAndCreateSchema(final Connection connection) {
         // Again, we send the query and add a listener to react to it
         connection.executeUpdate("CREATE TABLE IF NOT EXISTS posts(\n" +
@@ -75,35 +61,59 @@ public class MainDemo {
     private static void continueWithInserting(final Connection connection) {
         // We can directly send multiple queries
         // And then wait until everyone is done.
-        final DbFuture<Result> firstPost = connection.executeUpdate("INSERT INTO posts(title,content) VALUES('The Title','TheContent')");
-        final DbFuture<Result> secondPost = connection.executeUpdate("INSERT INTO posts(title,content) VALUES('Second Title','More Content')");
-        final DbFuture<Result> thirdPost = connection.executeUpdate("INSERT INTO posts(title,content) VALUES('Third Title','Even More Content')");
-        final DbListener<Result> allDone = new DbListener<Result>() {
+        final DbFuture<PreparedUpdate> preparedUpdateDbFuture=connection.prepareUpdate("INSERT INTO posts(title,content) VALUES(?,?)");
+        preparedUpdateDbFuture.addListener(new DbListener<PreparedUpdate>() {
             @Override
-            public void onCompletion(DbFuture<Result> resultSetDbFuture) {
-                switch (resultSetDbFuture.getState()) {
+            public void onCompletion(DbFuture<PreparedUpdate> future) {
+                switch (future.getState()) {
                     case SUCCESS:
-                        // Check if everyone is done
-                        if(firstPost.isDone()&&secondPost.isDone()&&thirdPost.isDone()){
-                            continueWithSelect(connection);
+                        System.out.println("Created Statement");
+                        try {
+                            PreparedUpdate preparedUpdate=future.get();
+                            final DbFuture<Result> firstPost = preparedUpdate.execute("The Title","TheContent");
+                            final DbFuture<Result> secondPost = preparedUpdate.execute("Second Title","More Content");
+                            final DbFuture<Result> thirdPost = preparedUpdate.execute("Third Title","And More Content");
+                            final DbListener<Result> allDone = new DbListener<Result>() {
+                                @Override
+                                public void onCompletion(DbFuture<Result> resultSetDbFuture) {
+                                    switch (resultSetDbFuture.getState()) {
+                                        case SUCCESS:
+                                            // Check if everyone is done
+                                            if(firstPost.isDone()&&secondPost.isDone()&&thirdPost.isDone()){
+                                                continueWithSelect(connection);
+                                            }
+                                            break;
+                                        case FAILURE:
+                                            resultSetDbFuture.getException().printStackTrace();
+                                            break;
+                                        case CANCELLED:
+                                            System.out.println("Cancelled");
+                                            break;
+                                    }
+
+                                }
+                            };
+                            // Register the listener to all instances
+                            firstPost.addListener(allDone);
+                            secondPost.addListener(allDone);
+                            thirdPost.addListener(allDone);
+                        } catch (Exception e){
+                            e.printStackTrace();
                         }
+
                         break;
                     case FAILURE:
-                        resultSetDbFuture.getException().printStackTrace();
+                        future.getException().printStackTrace();
                         break;
                     case CANCELLED:
                         System.out.println("Cancelled");
                         break;
                 }
-
             }
-        };
-        // Register the listener to all instances
-        firstPost.addListener(allDone);
-        secondPost.addListener(allDone);
-        thirdPost.addListener(allDone);
-    }
+        });
 
+
+    }
     private static void continueWithSelect(final Connection connection) {
         connection.executeQuery("SELECT * FROM posts").addListener(new DbListener<ResultSet>() {
             @Override
@@ -131,4 +141,5 @@ public class MainDemo {
             System.out.println("ID: "+row.get("ID").getLong()+" with title "+row.get("title").getString());
         }
     }
+
 }
